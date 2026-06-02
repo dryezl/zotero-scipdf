@@ -12,12 +12,25 @@ export async function registerPrefsScripts(_window: Window) {
   } else {
     addon.data.prefs.window = _window;
   }
-  const autoDownloadCheckbox = _window.document.querySelector(`#zotero-prefpane-${config.addonRef}-autoDownload`) as XUL.Checkbox;
-  const urlInput = _window.document.querySelector(`#zotero-prefpane-${config.addonRef}-scihubUrl`) as HTMLInputElement;
+  const autoDownloadCheckbox = _window.document.querySelector(
+    `#zotero-prefpane-${config.addonRef}-autoDownload`,
+  ) as XUL.Checkbox | HTMLInputElement | null;
+  const urlInput = _window.document.querySelector(
+    `#zotero-prefpane-${config.addonRef}-scihubUrl`,
+  ) as HTMLInputElement | null;
+  if (!autoDownloadCheckbox || !urlInput) {
+    return;
+  }
+  const getAutoDownloadChecked = () => !!autoDownloadCheckbox.checked;
+  const setAutoDownloadChecked = (value: boolean) => {
+    autoDownloadCheckbox.checked = value;
+  };
 
   const resolver = CustomResolverManager.shared.customResolvers;
-  autoDownloadCheckbox.checked = resolver.length > 0 && resolver[0].automatic !== false;
-  urlInput.value = resolver.map((e) => e.url).join(';');
+  setAutoDownloadChecked(
+    resolver.length > 0 && resolver[0].automatic !== false,
+  );
+  urlInput.value = resolver.map((e) => e.url).join(";");
 
   const validURL = (url?: string) => {
     return url && url.length > 0;
@@ -28,7 +41,10 @@ export async function registerPrefsScripts(_window: Window) {
     const setedURLs: string[] = [];
     for (const url of new Set(urls)) {
       if (validURL(url.trim())) {
-        const resolver = sciHubCustomResolver(url.trim(), autoDownloadCheckbox.checked);
+        const resolver = sciHubCustomResolver(
+          url.trim(),
+          getAutoDownloadChecked(),
+        );
         CustomResolverManager.shared.appendCustomResolversInZotero([resolver]);
         setedURLs.push(resolver.url);
       } else {
@@ -37,14 +53,17 @@ export async function registerPrefsScripts(_window: Window) {
           closeTime: 3000,
         }).createLine({
           text: `URL Error`,
-          type: 'fail',
-          progress: 0
+          type: "fail",
+          progress: 0,
         }).show();
       }
     }
-    urlInput.value = setedURLs.join(',');
-  }
+    urlInput.value = setedURLs.join(",");
+  };
   autoDownloadCheckbox.addEventListener("command", () => {
+    updateResolver();
+  });
+  autoDownloadCheckbox.addEventListener("change", () => {
     updateResolver();
   });
 
