@@ -60,11 +60,8 @@ export async function registerPrefsScripts(_window: Window) {
     }
     urlInput.value = setedURLs.join(",");
   };
-  autoDownloadCheckbox.addEventListener("command", () => {
-    updateResolver();
-  });
-  autoDownloadCheckbox.addEventListener("change", () => {
-    updateResolver();
+  ["command", "change"].forEach((eventName) => {
+    autoDownloadCheckbox.addEventListener(eventName, updateResolver);
   });
 
   urlInput.addEventListener("change", () => {
